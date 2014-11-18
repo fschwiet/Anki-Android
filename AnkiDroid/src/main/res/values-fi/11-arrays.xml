@@ -132,6 +132,7 @@
     <item>Opiskele satunnaisia kortteja</item>
     <item>Esikatsele uusia kortteja</item>
     <item>Rajoitu tiettyhin tunnisteisiin</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Käytä tätä pakkaa</item>

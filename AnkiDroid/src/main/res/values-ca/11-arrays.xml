@@ -132,6 +132,7 @@
     <item>Estudi d\'una selecció aleatòria de les fitxes</item>
     <item>Vista prèvia de les fitxes noves</item>
     <item>Limit per a determinades etiquetes</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Use current deck</item>

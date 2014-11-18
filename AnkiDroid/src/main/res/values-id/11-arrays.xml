@@ -132,6 +132,7 @@
     <item>Study a random selection of cards</item>
     <item>Tinjau ulang kartu baru</item>
     <item>Batasi untuk tag tertentu</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Use current deck</item>

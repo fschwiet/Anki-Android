@@ -132,6 +132,7 @@
     <item>Študovať náhodný výber kariet</item>
     <item>Ukážka nových kariet</item>
     <item>Obmedziť na konkrétne štítky</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Použiť aktuálny balíček</item>

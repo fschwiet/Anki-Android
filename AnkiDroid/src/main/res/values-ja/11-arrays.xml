@@ -132,6 +132,7 @@
     <item>カードをランダムに学習する</item>
     <item>新規カードをプレビューする</item>
     <item>特定のタグによる選択</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>開いている単語帳へ追加</item>

@@ -132,6 +132,7 @@
     <item>무작위 카드 학습하기</item>
     <item>새로운 카드 미리 학습하기</item>
     <item>특정 태그로만 제한하기</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Use current deck</item>

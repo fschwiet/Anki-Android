@@ -132,6 +132,7 @@
     <item>Вивчити випадковий набір карт</item>
     <item>Переглянути нові карти</item>
     <item>Обмежити конкретними мітками</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Використовувати поточну колоду</item>

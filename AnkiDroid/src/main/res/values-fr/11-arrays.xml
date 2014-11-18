@@ -132,6 +132,7 @@
     <item>Étudier des cartes au hasard</item>
     <item>Voir en avance</item>
     <item>Limiter à certaines étiquettes</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Utilisez le paquet courant</item>

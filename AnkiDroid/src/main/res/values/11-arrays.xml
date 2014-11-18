@@ -113,6 +113,7 @@
         <item>Study a random selection of cards</item>
         <item>Preview new cards</item>
         <item>Limit to particular tags</item>
+        <item>Self-study recent challenges</item>
     </string-array>
     <string-array name="add_to_cur_labels">
         <item>Use current deck</item>

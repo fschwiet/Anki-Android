@@ -132,6 +132,7 @@
     <item>Ucz się losowo wybranych kart</item>
     <item>Przejrzyj nowe karty</item>
     <item>Ogranicz do poszczególnych tagów</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Użyj obecnej talii</item>

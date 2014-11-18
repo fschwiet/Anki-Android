@@ -132,6 +132,7 @@
     <item>Revisar um grupo de cartões aleatórios</item>
     <item>Estudar cartões novos</item>
     <item>Limitar a tags específicas</item>
+    <item>Self-study recent challenges</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Usar o deck atual</item>
