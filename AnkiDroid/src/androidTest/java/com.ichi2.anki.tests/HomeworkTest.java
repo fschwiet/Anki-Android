@@ -11,12 +11,14 @@ import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Models;
 import com.ichi2.libanki.Note;
 import com.ichi2.libanki.Sched;
+import com.ichi2.libanki.Utils;
 
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * Created by user on 11/17/14.
@@ -63,15 +65,29 @@ public class HomeworkTest extends AndroidTestCase {
             collection.getSched().answerCard(c, EASE_EASY);
         }
 
-        long[] homework = Homework.getHomework(collection, 1);
+        long[] homework = Homework.getHomework(collection, 20);
+        assertEquals(2, homework.length);
+        assertEquals(homework[0], failedNote.getId());
+        assertEquals(homework[1], hardNote.getId());
+
+        homework = Homework.getHomework(collection, 1);
         assertEquals(1, homework.length);
-        assertEquals(homework[0], hardNote.getId());
+        assertEquals(homework[0], failedNote.getId());
     }
 }
 
 class Homework
 {
-    static public long[] getHomework(Collection collect, int count) {
-        return null;
+    static public long[] getHomework(Collection collection, int count) {
+
+        long[] ids = Utils
+                .arrayList2array(collection.getDb().queryColumn(Long.class,
+                "SELECT cards.nid, MAX(revlog.time) as time FROM revlog " +
+                "JOIN cards ON cards.id = revlog.cid " +
+                "WHERE (revlog.ease = 1 OR revlog.ease = 2) " +
+                "GROUP BY cards.nid " +
+                "ORDER BY time DESC LIMIT " + count, 0));
+
+        return ids;
     }
 }
