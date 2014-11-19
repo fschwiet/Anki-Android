@@ -36,6 +36,7 @@ public class CustomStudyDialog extends DialogFragment {
     public static final int CUSTOM_STUDY_RANDOM = 4;
     public static final int CUSTOM_STUDY_PREVIEW = 5;
     public static final int CUSTOM_STUDY_TAGS = 6;
+    public static final int CUSTOM_STUDY_SELFSTUDY = 7;
     
     private EditText mEditText;
 
@@ -187,6 +188,8 @@ public class CustomStudyDialog extends DialogFragment {
                 return res.getString(R.string.custom_study_random);
             case CUSTOM_STUDY_PREVIEW:
                 return res.getString(R.string.custom_study_preview);
+            case CUSTOM_STUDY_SELFSTUDY:
+                return "Number of difficult cards to review:";
             default:
                 return "";
         }
@@ -207,6 +210,8 @@ public class CustomStudyDialog extends DialogFragment {
                 return Integer.toString(prefs.getInt("randomCards", 100));
             case CUSTOM_STUDY_PREVIEW:
                 return Integer.toString(prefs.getInt("previewDays", 1));
+            case CUSTOM_STUDY_SELFSTUDY:
+                return Integer.toString(prefs.getInt("selfStudyLength", 7));
             default:
                 return "";
         }
