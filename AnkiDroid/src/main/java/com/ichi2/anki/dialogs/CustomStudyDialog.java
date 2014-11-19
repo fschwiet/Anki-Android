@@ -143,7 +143,10 @@ public class CustomStudyDialog extends DialogFragment {
                                 new Object[] { "is:new added:" + Integer.toString(n), Consts.DYN_MAX_SIZE, Consts.DYN_OLDEST }, false);
                         break;
                     case CUSTOM_STUDY_SELFSTUDY:
+                        Bundle bundle = new Bundle();
+                        bundle.putInt("noteCount", n);
                         Intent selfStudyIntent = new Intent(CustomStudyDialog.this.getActivity(), SelfStudyActivity.class);
+                        selfStudyIntent.putExtras(bundle);
                         CustomStudyDialog.this.getActivity().startActivity(selfStudyIntent);
                         break;
                     default:

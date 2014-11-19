@@ -4,6 +4,7 @@ import android.test.AndroidTestCase;
 import android.util.Log;
 
 import com.ichi2.anki.BackupManager;
+import com.ichi2.anki.SelfStudyActivity;
 import com.ichi2.anki.exception.APIVersionException;
 import com.ichi2.anki.exception.ConfirmModSchemaException;
 import com.ichi2.libanki.Card;
@@ -65,29 +66,14 @@ public class HomeworkTest extends AndroidTestCase {
             collection.getSched().answerCard(c, EASE_EASY);
         }
 
-        long[] homework = Homework.getHomework(collection, 20);
+        long[] homework = SelfStudyActivity.getHomework(collection, 20);
         assertEquals(2, homework.length);
         assertEquals(homework[0], failedNote.getId());
         assertEquals(homework[1], hardNote.getId());
 
-        homework = Homework.getHomework(collection, 1);
+        homework = SelfStudyActivity.getHomework(collection, 1);
         assertEquals(1, homework.length);
         assertEquals(homework[0], failedNote.getId());
     }
 }
 
-class Homework
-{
-    static public long[] getHomework(Collection collection, int count) {
-
-        long[] ids = Utils
-                .arrayList2array(collection.getDb().queryColumn(Long.class,
-                "SELECT cards.nid, MAX(revlog.time) as time FROM revlog " +
-                "JOIN cards ON cards.id = revlog.cid " +
-                "WHERE (revlog.ease = 1 OR revlog.ease = 2) " +
-                "GROUP BY cards.nid " +
-                "ORDER BY time DESC LIMIT " + count, 0));
-
-        return ids;
-    }
-}
