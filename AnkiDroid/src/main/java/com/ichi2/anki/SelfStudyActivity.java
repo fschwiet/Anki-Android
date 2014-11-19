@@ -2,6 +2,8 @@ package com.ichi2.anki;
 
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.text.Html;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -43,18 +45,25 @@ public class SelfStudyActivity extends ActionBarActivity {
         }
 
         StringBuilder contents = new StringBuilder();
-        String delimiter = "";
 
         for(Note note : loadedNotes) {
-            for(String[] e : note.items()) {
-                contents.append(delimiter + e[0] + ": " + e[1]);
-                delimiter = ", ";
+
+            for(int i = 0; i < note.items().length; i++) {
+                if (i == 0) {
+                    contents.append("<b>");
+                } else {
+                    contents.append(" -- ");
+                }
+                contents.append(note.items()[i][1]);
+                if (i == 0) {
+                    contents.append("</b>");
+                }
             }
-            delimiter = "\n";
+            contents.append("<br/>");
         }
 
         TextView tv = (TextView)findViewById(R.id.textView_selfStudy);
-        tv.setText(contents);
+        tv.setText(Html.fromHtml(contents.toString()));
     }
 
 
