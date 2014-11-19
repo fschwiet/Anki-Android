@@ -2335,7 +2335,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity {
             mSimpleCard.setText(mCardContent);
         } else if (!mUseQuickUpdate && mCard != null && mNextCard != null) {
             mNextCard.setBackgroundColor(mCurrentBackgroundColor);
-            mNextCard.loadDataWithBaseURL(mBaseUrl, mCardContent.toString(), "text/html", "utf-8", null);
+            mNextCard.loadDataWithBaseURL(mBaseUrl + "__viewer__.html", mCardContent.toString(), "text/html", "utf-8", null);
             mNextCard.setVisibility(View.VISIBLE);
             mCardFrame.removeView(mCard);
             mCard.destroy();
@@ -2348,7 +2348,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity {
                 mCard.setFocusableInTouchMode(true);
             }
         } else if (mCard != null) {
-            mCard.loadDataWithBaseURL(mBaseUrl, mCardContent.toString(), "text/html", "utf-8", null);
+            mCard.loadDataWithBaseURL(mBaseUrl + "__viewer__.html", mCardContent.toString(), "text/html", "utf-8", null);
             mCard.setBackgroundColor(mCurrentBackgroundColor);
         }
         if (mChangeBorderStyle) {
@@ -2494,7 +2494,7 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity {
      * Calculates a dynamic font size depending on the length of the contents taking into account that the input string
      * contains html-tags, which will not be displayed and therefore should not be taken into account.
      * 
-     * @param htmlContents
+     * @param htmlContent
      * @return font size respecting MIN_DYNAMIC_FONT_SIZE and MAX_DYNAMIC_FONT_SIZE
      */
     private static int calculateDynamicFontSize(String htmlContent) {
