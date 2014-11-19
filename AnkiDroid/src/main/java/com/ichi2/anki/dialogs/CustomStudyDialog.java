@@ -3,6 +3,7 @@ package com.ichi2.anki.dialogs;
 
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.widget.TextView;
 import com.ichi2.anki.AnkiActivity;
 import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.R;
+import com.ichi2.anki.SelfStudyActivity;
 import com.ichi2.anki.StudyOptionsFragment.StudyOptionsListener;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Consts;
@@ -139,6 +141,10 @@ public class CustomStudyDialog extends DialogFragment {
                     case CUSTOM_STUDY_PREVIEW:
                         ((StudyOptionsListener) getActivity()).createFilteredDeck(new JSONArray(),
                                 new Object[] { "is:new added:" + Integer.toString(n), Consts.DYN_MAX_SIZE, Consts.DYN_OLDEST }, false);
+                        break;
+                    case CUSTOM_STUDY_SELFSTUDY:
+                        Intent selfStudyIntent = new Intent(CustomStudyDialog.this.getActivity(), SelfStudyActivity.class);
+                        CustomStudyDialog.this.getActivity().startActivity(selfStudyIntent);
                         break;
                     default:
                         break;                       
