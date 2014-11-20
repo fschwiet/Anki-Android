@@ -66,7 +66,6 @@ public class SelfStudyActivity extends ActionBarActivity {
         tv.setText(Html.fromHtml(contents.toString()));
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         return true;
@@ -78,9 +77,9 @@ public class SelfStudyActivity extends ActionBarActivity {
                 .arrayList2array(collection.getDb().queryColumn(Long.class,
                         "SELECT cards.nid, MAX(revlog.time) as time FROM revlog " +
                                 "JOIN cards ON cards.id = revlog.cid " +
-                                "WHERE (revlog.ease = 1 OR revlog.ease = 2) " +
+                                "WHERE revlog.ease <= 2 " +
                                 "GROUP BY cards.nid " +
-                                "ORDER BY time DESC LIMIT " + count, 0));
+                                "ORDER BY revlog.time DESC LIMIT " + count, 0));
 
         return ids;
     }
