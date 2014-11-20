@@ -24,7 +24,7 @@ import java.util.ArrayList;
 /**
  * Created by user on 11/17/14.
  */
-public class HomeworkTest extends AndroidTestCase {
+public class SelfStudyTest extends AndroidTestCase {
 
     Collection collection;
 
