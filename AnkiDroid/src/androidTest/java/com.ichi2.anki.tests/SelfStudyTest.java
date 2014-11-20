@@ -66,6 +66,12 @@ public class SelfStudyTest extends AndroidTestCase {
             collection.getSched().answerCard(c, EASE_EASY);
         }
 
+        //  SelfStudyActivity picks any note that was marked as failed/hard,
+        //  even if it was later picked as non-failed/hard
+        for(Card c : failedNote.cards()) {
+            collection.getSched().answerCard(c, EASE_EASY);
+        }
+
         long[] homework = SelfStudyActivity.getHomework(collection, 20);
         assertEquals(2, homework.length);
         assertEquals(homework[0], failedNote.getId());
