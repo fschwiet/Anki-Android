@@ -26,6 +26,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -247,6 +249,56 @@ public class AnkiDb {
         }
 
         return results;
+    }
+
+    public JSONObject[] queryJSON(String query) throws Exception {
+
+        Cursor cursor = null;
+
+        try {
+            cursor = mDatabase.rawQuery(query, null);
+            ArrayList<JSONObject> results = new ArrayList<JSONObject>();
+
+            while (cursor.moveToNext()) {
+                JSONObject row = new JSONObject();
+
+                for(int columnIndex = 0; columnIndex < cursor.getColumnCount(); columnIndex++) {
+                    switch(cursor.getType(columnIndex)) {
+                        case Cursor.FIELD_TYPE_STRING:
+                            row.put(cursor.getColumnName(columnIndex), cursor.getString(columnIndex));
+                            break;
+                        case Cursor.FIELD_TYPE_BLOB:
+                            row.put(cursor.getColumnName(columnIndex), "<blob[" + cursor.getBlob(columnIndex).length + "]>");
+                            break;
+                        case Cursor.FIELD_TYPE_FLOAT:
+                            row.put(cursor.getColumnName(columnIndex), cursor.getFloat(columnIndex));
+                            break;
+                        case Cursor.FIELD_TYPE_INTEGER:
+                            row.put(cursor.getColumnName(columnIndex), cursor.getInt(columnIndex));
+                            break;
+                        case Cursor.FIELD_TYPE_NULL:
+                            row.put(cursor.getColumnName(columnIndex), "?null?");
+                            break;
+
+                        default:
+                            row.put(cursor.getColumnName(columnIndex), "<type:" + cursor.getType(columnIndex) + ",value=??>");
+                            break;
+
+                    }
+                }
+
+                results.add(row);
+            }
+
+            JSONObject[] finalResults = new JSONObject[results.size()];
+            results.toArray(finalResults);
+
+            return finalResults;
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
 
