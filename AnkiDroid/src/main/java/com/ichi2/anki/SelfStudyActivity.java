@@ -68,6 +68,7 @@ public class SelfStudyActivity extends ActionBarActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+
         return true;
     }
 
@@ -75,11 +76,11 @@ public class SelfStudyActivity extends ActionBarActivity {
 
         long[] ids = Utils
                 .arrayList2array(collection.getDb().queryColumn(Long.class,
-                        "SELECT cards.nid, MAX(revlog.time) as time FROM revlog " +
+                        "SELECT cards.nid, MAX(revlog.id) as maxTime FROM revlog " +
                                 "JOIN cards ON cards.id = revlog.cid " +
                                 "WHERE revlog.ease <= 2 " +
                                 "GROUP BY cards.nid " +
-                                "ORDER BY revlog.time DESC LIMIT " + count, 0));
+                                "ORDER BY maxTime DESC LIMIT " + count, 0));
 
         return ids;
     }

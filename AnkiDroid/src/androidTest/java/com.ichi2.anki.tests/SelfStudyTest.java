@@ -43,7 +43,7 @@ public class SelfStudyTest extends AndroidTestCase {
     public static final int EASE_MID = 3;
     public static final int EASE_EASY = 4;
 
-    public void testAdd() throws IOException, APIVersionException, ConfirmModSchemaException {
+    public void testAdd() throws Exception {
         collection = com.ichi2.anki.tests.Shared.getEmptyCol();
 
         JSONObject model = Models.addForwardReverse(collection);
@@ -72,14 +72,22 @@ public class SelfStudyTest extends AndroidTestCase {
             collection.getSched().answerCard(c, EASE_EASY);
         }
 
-        long[] homework = SelfStudyActivity.getHomework(collection, 20);
+        long[] homework = null;
+
+        homework = SelfStudyActivity.getHomework(collection, 20);
         assertEquals(2, homework.length);
-        assertEquals(homework[0], failedNote.getId());
-        assertEquals(homework[1], hardNote.getId());
+        assertEquals(homework[0], hardNote.getId());
+        assertEquals(homework[1], failedNote.getId());
 
         homework = SelfStudyActivity.getHomework(collection, 1);
         assertEquals(1, homework.length);
-        assertEquals(homework[0], failedNote.getId());
+        assertEquals(homework[0], hardNote.getId());
+
+        /*
+        for(JSONObject result : collection.getDb().queryJSON("select * from revlog")) {
+            Log.d("revlog", result.toString());
+        }
+        */
     }
 }
 
