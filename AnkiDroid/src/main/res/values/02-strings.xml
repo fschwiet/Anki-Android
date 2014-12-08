@@ -189,4 +189,5 @@
     <string name="lookup_hint">After copying the text, tap anywhere on the flashcard to show the search icon</string>
     <string name="add_content_showcase_text">To get started, tap the + button to add some new study material.\n\n Press \'Help\' to see the manual.</string>
     <string name="title_activity_self_study">SelfStudyActivity</string>
+    <string name="title_activity_import_json">ImportJsonActivity</string>
 </resources>

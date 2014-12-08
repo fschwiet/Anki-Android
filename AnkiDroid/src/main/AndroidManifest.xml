@@ -320,6 +320,11 @@
             android:name="com.ichi2.anki.SelfStudyActivity"
             android:label="@string/title_activity_self_study" >
         </activity>
+
+        <activity
+            android:name="com.ichi2.anki.web.ImportJsonActivity"
+            android:label="@string/title_activity_import_json" >
+        </activity>
     </application>
 
 </manifest>
