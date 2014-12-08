@@ -18,6 +18,7 @@ import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.R;
 import com.ichi2.anki.SelfStudyActivity;
 import com.ichi2.anki.StudyOptionsFragment.StudyOptionsListener;
+import com.ichi2.anki.web.ImportJsonActivity;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Consts;
 import com.ichi2.themes.StyledDialog;
@@ -39,6 +40,7 @@ public class CustomStudyDialog extends DialogFragment {
     public static final int CUSTOM_STUDY_PREVIEW = 5;
     public static final int CUSTOM_STUDY_TAGS = 6;
     public static final int CUSTOM_STUDY_SELFSTUDY = 7;
+    public static final int CUSTOM_STUDY_IMPORT_JSON = 8;
     
     private EditText mEditText;
 
@@ -149,6 +151,11 @@ public class CustomStudyDialog extends DialogFragment {
                         selfStudyIntent.putExtras(bundle);
                         CustomStudyDialog.this.getActivity().startActivity(selfStudyIntent);
                         break;
+                    case CUSTOM_STUDY_IMPORT_JSON:
+                        Intent importJsonIntent = new Intent(CustomStudyDialog.this.getActivity(), ImportJsonActivity.class);
+                        importJsonIntent.putExtras(new Bundle());
+                        CustomStudyDialog.this.getActivity().startActivity(importJsonIntent);
+                        break;
                     default:
                         break;                       
                 }
@@ -199,6 +206,8 @@ public class CustomStudyDialog extends DialogFragment {
                 return res.getString(R.string.custom_study_preview);
             case CUSTOM_STUDY_SELFSTUDY:
                 return "Number of difficult cards to review:";
+            case CUSTOM_STUDY_IMPORT_JSON:
+                return "Merge import JSON file containing note information.";
             default:
                 return "";
         }
