@@ -133,6 +133,7 @@
     <item>Previsualizar nuevas tarjetas</item>
     <item>Limitar a etiquetas particulares</item>
     <item>Self-study recent challenges</item>
+    <item>Import JSON file with note data</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Utilizar el mazo actual</item>

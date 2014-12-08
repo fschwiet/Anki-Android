@@ -133,6 +133,7 @@
     <item>Új kártyák átnézése</item>
     <item>Bizonyos címkékre szűrés</item>
     <item>Self-study recent challenges</item>
+    <item>Import JSON file with note data</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Use current deck</item>

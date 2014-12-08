@@ -133,6 +133,7 @@
     <item>Voir en avance</item>
     <item>Limiter à certaines étiquettes</item>
     <item>Self-study recent challenges</item>
+    <item>Import JSON file with note data</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Utilisez le paquet courant</item>
