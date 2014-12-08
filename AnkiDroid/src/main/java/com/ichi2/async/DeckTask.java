@@ -30,9 +30,11 @@ import com.ichi2.anki.BackupManager;
 import com.ichi2.anki.CardBrowser;
 import com.ichi2.anki.R;
 import com.ichi2.anki.exception.APIVersionException;
+import com.ichi2.anki.exception.ConfirmModSchemaException;
 import com.ichi2.libanki.AnkiPackageExporter;
 import com.ichi2.libanki.Card;
 import com.ichi2.libanki.Collection;
+import com.ichi2.libanki.Models;
 import com.ichi2.libanki.Note;
 import com.ichi2.libanki.Sched;
 import com.ichi2.libanki.Stats;
@@ -61,6 +63,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipFile;
 
 /**
@@ -98,6 +101,8 @@ public class DeckTask extends BaseAsyncTask<DeckTask.TaskData, DeckTask.TaskData
     public static final int TASK_TYPE_CONF_SET_SUBDECKS = 36;
     public static final int TASK_TYPE_RENDER_BROWSER_QA = 37;
     public static final int TASK_TYPE_CHECK_MEDIA = 38;
+    public static final int TASK_TYPE_ADD_TEMPLATE = 39;
+    public static final int TASK_TYPE_REMOVE_TEMPLATE = 40;
 
     /**
      * The most recently started {@link DeckTask} instance.
@@ -120,16 +125,6 @@ public class DeckTask extends BaseAsyncTask<DeckTask.TaskData, DeckTask.TaskData
      * @return the newly created task
      */
     public static DeckTask launchDeckTask(int type, Listener listener, TaskData... params) {
-        // Before starting a new task, cancel rendering of Q&A for browser
-        Log.i(AnkiDroidApp.TAG, "launchDeckTask(" + type + ")");
-        if (sLatestInstance != null && sLatestInstance.mType == TASK_TYPE_RENDER_BROWSER_QA
-                && !sLatestInstance.isCancelled()) {
-            Log.i(AnkiDroidApp.TAG, "DeckTask: cancelling render browser QA...");
-            sLatestInstance.cancel(true);
-            waitToFinish();
-            Log.i(AnkiDroidApp.TAG, "DeckTask: cancelled render browser QA");
-
-        }
         // Start new task
         /* Note: It seems that doing this can lead to replacing sLatestInstance with a new DeckTask after calling cancel()
         but BEFORE actually finishing the task. This interferes with code checking for onCancelled(), which is very problematic */
@@ -144,13 +139,29 @@ public class DeckTask extends BaseAsyncTask<DeckTask.TaskData, DeckTask.TaskData
      * Block the current thread until the currently running DeckTask instance (if any) has finished.
      */
     public static void waitToFinish() {
+        waitToFinish(null);
+    }
+
+    /**
+     * Block the current thread until the currently running DeckTask instance (if any) has finished.
+     * @param timeout timeout in seconds
+     * @return whether or not the previous task was successful or not
+     */
+    public static boolean waitToFinish(Integer timeout) {
         try {
             if ((sLatestInstance != null) && (sLatestInstance.getStatus() != AsyncTask.Status.FINISHED)) {
-                Log.i(AnkiDroidApp.TAG, "DeckTask: wait to finish");
-                sLatestInstance.get();
+                Log.i(AnkiDroidApp.TAG, "DeckTask: waiting for task " + sLatestInstance.mType + " to finish...");
+                if (timeout != null) {
+                    sLatestInstance.get(timeout, TimeUnit.SECONDS);
+                } else {
+                    sLatestInstance.get();
+                }
+
             }
+            return true;
         } catch (Exception e) {
-            return;
+            Log.i(AnkiDroidApp.TAG, "Exception waiting for task to finish \n" + e.getMessage());
+            return false;
         }
     }
 
@@ -314,6 +325,12 @@ public class DeckTask extends BaseAsyncTask<DeckTask.TaskData, DeckTask.TaskData
 
             case TASK_TYPE_CHECK_MEDIA:
                 return doInBackgroundCheckMedia(params);
+
+            case TASK_TYPE_ADD_TEMPLATE:
+                return doInBackgroundAddTemplate(params);
+
+            case TASK_TYPE_REMOVE_TEMPLATE:
+                return doInBackgroundRemoveTemplate(params);
 
             default:
                 Log.e(AnkiDroidApp.TAG, "unknown task type: " + mType);
@@ -654,39 +671,29 @@ public class DeckTask extends BaseAsyncTask<DeckTask.TaskData, DeckTask.TaskData
 
 
     private TaskData doInBackgroundRenderBrowserQA(TaskData... params) {
-        final int initialInterval = 15; // initial number of cards we render one by one
-        final int refreshInterval = 250; // number of cards to render at a time after initialInterval
-        int numRendered = 0;
         Log.i(AnkiDroidApp.TAG, "doInBackgroundRenderBrowserQA");
         Collection col = (Collection) params[0].getObjArray()[0];
         ArrayList<HashMap<String, String>> items = (ArrayList<HashMap<String, String>>) params[0].getObjArray()[1];
-        // for each card in the browser list
-        try {
-            for (HashMap<String, String> item : items) {
+        Integer startPos = (Integer) params[0].getObjArray()[2];
+        Integer n = (Integer) params[0].getObjArray()[3];
+
+        // for each specified card in the browser list
+        for (int i = startPos; i < startPos + n; i++) {
+            if (i >= 0 && i < items.size() && items.get(i).get("answer").equals("")) {
                 // Extract card item
-                Card c = col.getCard(Long.parseLong(item.get("id"), 10));
+                Card c = col.getCard(Long.parseLong(items.get(i).get("id"), 10));
                 // Update item
-                CardBrowser.updateSearchItemQA(item, c);
-                // Send progress periodically so that QA list in browser updates
+                CardBrowser.updateSearchItemQA(items.get(i), c);
+                // Stop if cancelled
                 if (isCancelled()) {
                     return null;
                 } else {
-                    numRendered++;
-                    if (numRendered % refreshInterval == 0 || numRendered <= initialInterval) {
-                        TaskData result = new TaskData(items);
-                        publishProgress(result);
-                    }
+                    float progress = (float) i / n * 100;
+                    publishProgress(new TaskData((int) progress));
                 }
             }
-        } catch (OutOfMemoryError e) {
-            // TODO: Check if this is actually effective at dealing with the error, maybe the ArrayList has grown too
-            // big to recover?
-            Log.e(AnkiDroidApp.TAG, "OutOfMemoryError rendering the Q&A for browser... probably too many cards");
-            return null;
         }
-        TaskData result = new TaskData(items);
-        publishProgress(result);
-        return result;
+        return new TaskData(items);
     }
 
 
@@ -1153,6 +1160,50 @@ public class DeckTask extends BaseAsyncTask<DeckTask.TaskData, DeckTask.TaskData
         }
     }
 
+    /**
+     * Add a new card template
+     * @param params
+     * @return
+     */
+    private TaskData doInBackgroundAddTemplate(TaskData... params) {
+        Log.i(AnkiDroidApp.TAG, "doInBackgroundAddTemplate");
+        Object [] args = params[0].getObjArray();
+        Collection col = (Collection ) args[0];
+        JSONObject model = (JSONObject) args[1];
+        JSONObject template = (JSONObject) args[2];
+        // add the new template
+        try {
+            col.getModels().addTemplate(model, template);
+        } catch (ConfirmModSchemaException e) {
+            Log.e(AnkiDroidApp.TAG, "doInBackgroundAddTemplate :: ConfirmModSchemaException");
+            return new TaskData(false);
+        }
+        return new TaskData(true);
+    }
+
+    /**
+     * Add a new card template
+     * @param params
+     * @return
+     */
+    private TaskData doInBackgroundRemoveTemplate(TaskData... params) {
+        Log.i(AnkiDroidApp.TAG, "doInBackgroundRemoveTemplate");
+        Object [] args = params[0].getObjArray();
+        Collection col = (Collection ) args[0];
+        JSONObject model = (JSONObject) args[1];
+        JSONObject template = (JSONObject) args[2];
+        // add the new template
+        try {
+            boolean success = col.getModels().remTemplate(model, template);
+            if (! success) {
+                return new TaskData(col, "removeTemplateFailed", false);
+            }
+        } catch (ConfirmModSchemaException e) {
+            Log.e(AnkiDroidApp.TAG, "doInBackgroundRemoveTemplate :: ConfirmModSchemaException");
+            return new TaskData(false);
+        }
+        return new TaskData(true);
+    }
 
     /**
      * Listener for the status and result of a {@link DeckTask}.

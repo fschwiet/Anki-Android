@@ -149,6 +149,7 @@ public class NoteEditor extends AnkiActivity {
     public static final int REQUEST_ADD = 0;
     public static final int REQUEST_INTENT_ADD = 1;
     public static final int REQUEST_MULTIMEDIA_EDIT = 2;
+    public static final int REQUEST_TEMPLATE_EDIT = 3;
 
     private boolean mChanged = false;
     private boolean mFieldEdited = false;
@@ -289,7 +290,7 @@ public class NoteEditor extends AnkiActivity {
                 }
             } else {
                 // RuntimeException occured on adding note
-                closeCardEditor(DeckPicker.RESULT_DB_ERROR);
+                closeNoteEditor(DeckPicker.RESULT_DB_ERROR);
             }
         }
 
@@ -604,13 +605,6 @@ public class NoteEditor extends AnkiActivity {
     }
 
 
-    private void openReviewer() {
-        Intent reviewer = new Intent(NoteEditor.this, Previewer.class);
-        reviewer.putExtra("currentCardId", mCurrentEditedCard.getId());
-        startActivityWithoutAnimation(reviewer);
-    }
-
-
     private boolean addFromAedict(String extra_text) {
         String category = "";
         String[] notepad_lines = extra_text.split("\n");
@@ -810,16 +804,10 @@ public class NoteEditor extends AnkiActivity {
 
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-            Log.i(AnkiDroidApp.TAG, "CardEditor - onBackPressed()");
-            closeCardEditorWithCheck();
-            return true;
-        }
-
-        return super.onKeyDown(keyCode, event);
+    public void onBackPressed() {
+        Log.i(AnkiDroidApp.TAG, "CardEditor - onBackPressed()");
+        closeCardEditorWithCheck();
     }
-
 
     @Override
     protected void onDestroy() {
@@ -843,7 +831,7 @@ public class NoteEditor extends AnkiActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.card_editor, menu);
+        getMenuInflater().inflate(R.menu.note_editor, menu);
         if (mAddNote) {
             menu.findItem(R.id.action_later).setVisible(true);
             menu.findItem(R.id.action_copy_card).setVisible(false);
@@ -851,7 +839,6 @@ public class NoteEditor extends AnkiActivity {
             menu.findItem(R.id.action_saved_notes).setVisible(false);
             menu.findItem(R.id.action_add_card_from_card_editor).setVisible(true);
             menu.findItem(R.id.action_reset_card_progress).setVisible(true);
-            menu.findItem(R.id.action_preview).setVisible(true);
             menu.findItem(R.id.action_reschedule_card).setVisible(true);
             menu.findItem(R.id.action_reset_card_progress).setVisible(true);
             // if Arabic reshaping is enabled, disable the Save button to avoid
@@ -888,10 +875,6 @@ public class NoteEditor extends AnkiActivity {
 
             case R.id.action_save:
                 saveNote();
-                return true;
-
-            case R.id.action_preview:
-                openReviewer();
                 return true;
 
             case R.id.action_later:
@@ -1011,7 +994,7 @@ public class NoteEditor extends AnkiActivity {
     }
 
 
-    private void closeCardEditor(int result) {
+    private void closeNoteEditor(int result) {
         closeNoteEditor(result, null);
     }
 
@@ -1054,11 +1037,17 @@ public class NoteEditor extends AnkiActivity {
 
     private void showCardTemplateEditor() {
         Intent intent = new Intent(this, CardTemplateEditor.class);
-        intent.putExtra("noteType", getCurrentlySelectedModel().toString());
+        // Pass the model ID
+        try {
+            intent.putExtra("modelId", getCurrentlySelectedModel().getLong("id"));
+        } catch (JSONException e) {
+           throw new RuntimeException(e);
+        }
+        // Also pass the card ID if not adding new note
         if (!mAddNote) {
             intent.putExtra("cardId", mCurrentEditedCard.getId());
         }
-        startActivityWithAnimation(intent,  ActivityTransitionAnimation.LEFT);
+        startActivityForResultWithAnimation(intent, REQUEST_TEMPLATE_EDIT, ActivityTransitionAnimation.LEFT);
     }
 
 
@@ -1174,7 +1163,7 @@ public class NoteEditor extends AnkiActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (resultCode == DeckPicker.RESULT_DB_ERROR) {
-            closeCardEditor(DeckPicker.RESULT_DB_ERROR);
+            closeNoteEditor(DeckPicker.RESULT_DB_ERROR);
         }
 
         switch (requestCode) {
@@ -1208,6 +1197,8 @@ public class NoteEditor extends AnkiActivity {
                     mChanged = true;
                 }
                 break;
+            case REQUEST_TEMPLATE_EDIT:
+                updateCards(mEditorNote.model());
         }
     }
 
@@ -1254,12 +1245,14 @@ public class NoteEditor extends AnkiActivity {
 
             ImageButton mediaButton = (ImageButton) editline_view.findViewById(R.id.id_media_button);
             // Make the icon change between media icon and switch field icon depending on whether editing note type
-            if (editModelMode) {
-                // Use change note mapping button
+            if (editModelMode && allowFieldRemapping()) {
+                // Allow remapping if originally more than two fields
                 mediaButton.setBackgroundResource(R.drawable.ic_action_import_export);
                 setRemapButtonListener(mediaButton, i);
+            } else if (editModelMode && !allowFieldRemapping()) {
+                mediaButton.setBackgroundResource(0);
             } else {
-                // Use media editor button
+                // Use media editor button if not changing note type
                 mediaButton.setBackgroundResource(R.drawable.ic_media);
                 setMMButtonListener(mediaButton, i);
             }
@@ -1601,7 +1594,13 @@ public class NoteEditor extends AnkiActivity {
                 // Get index of field from old note type given the field index of new note type
                 Integer j = getKeyByValue(mModelChangeFieldMap, i);
                 // Set the new field label text
-                fields[i][0] = String.format(getResources().getString(R.string.field_remapping), fname, oldFields[j][0]);
+                if (allowFieldRemapping()) {
+                    // Show the content of old field if remapping is enabled
+                    fields[i][0] = String.format(getResources().getString(R.string.field_remapping), fname, oldFields[j][0]);
+                } else {
+                    fields[i][0] = fname;
+                }
+
                 // Set the new field label value
                 fields[i][1] = oldFields[j][1];
             } else {
@@ -1612,6 +1611,15 @@ public class NoteEditor extends AnkiActivity {
         }
         populateEditFields(fields, true);
         updateCards(newModel);
+    }
+
+    /**
+     *
+     * @return whether or not to allow remapping of fields for current model
+     */
+    private boolean allowFieldRemapping() {
+        // Map<String, Pair<Integer, JSONObject>> fMapNew = getCol().getModels().fieldMap(getCurrentlySelectedModel())
+        return mEditorNote.items().length > 2;
     }
 
     // ----------------------------------------------------------------------------

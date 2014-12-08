@@ -146,7 +146,7 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
     private static final int ADD_SHARED_DECKS = 15;
     private static final int LOG_IN_FOR_SHARED_DECK = 16;
     private static final int ADD_CRAM_DECK = 17;
-    private static final int SHOW_INFO_UPGRADE_DECKS = 18;
+    //private static final int SHOW_INFO_UPGRADE_DECKS = 18;
     private static final int REQUEST_REVIEW = 19;
 
     private StyledProgressDialog mProgressDialog;
@@ -192,8 +192,10 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
         @Override
         public void onPostExecute(DeckTask.TaskData result) {
             if (result == null) {
+                Log.i(AnkiDroidApp.TAG, "loadCounts() onPostExecute :: result = null");
                 return;
             }
+            Log.i(AnkiDroidApp.TAG, "loadCounts() onPostExecute :: result = "+result.getObjArray().toString());
             Object[] res = result.getObjArray();
             updateDecksList((TreeSet<Object[]>) res[0], (Integer) res[1], (Integer) res[2]);
             dismissOpeningCollectionDialog();
@@ -230,6 +232,7 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
 
         @Override
         public void onCancelled() {
+            Log.v(AnkiDroidApp.TAG, "loadCounts onCancelled()");
         }
     };
 
@@ -527,6 +530,15 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
         } else if (mShowcaseDialog != null && colOpen() && !getCol().isEmpty()) {
             hideShowcaseView();
         }
+
+        // Hide import, export, and restore backup on ChromeOS as users
+        // don't have access to the file system.
+        if (AnkiDroidApp.isChromebook()) {
+            menu.findItem(R.id.action_restore_backup).setVisible(false);
+            menu.findItem(R.id.action_import).setVisible(false);
+            menu.findItem(R.id.action_export).setVisible(false);
+        }
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -654,26 +666,6 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
             loadCounts();
         } else if (requestCode == REPORT_ERROR) {
             showStartupScreensAndDialogs(AnkiDroidApp.getSharedPrefs(getBaseContext()), 4);
-        } else if (requestCode == SHOW_INFO_UPGRADE_DECKS) {
-            if (intent != null && intent.hasExtra(Info.TYPE_UPGRADE_STAGE)) {
-                int type = intent.getIntExtra(Info.TYPE_UPGRADE_STAGE, Info.UPGRADE_SCREEN_BASIC1);
-                if (type == Info.UPGRADE_CONTINUE) {
-                    showStartupScreensAndDialogs(AnkiDroidApp.getSharedPrefs(getBaseContext()), 3);
-                } else {
-                    showUpgradeScreen(true, type, !intent.hasExtra(Info.TYPE_ANIMATION_RIGHT));
-                }
-            } else {
-                if (resultCode == RESULT_OK) {
-                    dismissOpeningCollectionDialog();
-                    if (AnkiDroidApp.colIsOpen()) {
-                        AnkiDroidApp.closeCollection(true);
-                    }
-                    AnkiDroidApp.openCollection(AnkiDroidApp.getCollectionPath());
-                    loadCounts();
-                } else {
-                    finishWithAnimation();
-                }
-            }
         } else if (requestCode == SHOW_INFO_WELCOME || requestCode == SHOW_INFO_NEW_VERSION) {
             if (resultCode == RESULT_OK) {
                 showStartupScreensAndDialogs(AnkiDroidApp.getSharedPrefs(getBaseContext()),
@@ -860,38 +852,6 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
         startActivityForResultWithAnimation(intent, ADD_NOTE, ActivityTransitionAnimation.LEFT);
     }
 
-
-    private void showUpgradeScreen(boolean animation, int stage) {
-        showUpgradeScreen(animation, stage, true);
-    }
-
-
-    private void showUpgradeScreen(boolean animation, int stage, boolean left) {
-        Intent upgradeIntent = new Intent(this, Info.class);
-        upgradeIntent.putExtra(Info.TYPE_EXTRA, Info.TYPE_UPGRADE_DECKS);
-        upgradeIntent.putExtra(Info.TYPE_UPGRADE_STAGE, stage);
-        startActivityForResultWithAnimation(upgradeIntent, SHOW_INFO_UPGRADE_DECKS,
-                left ? ActivityTransitionAnimation.LEFT : ActivityTransitionAnimation.RIGHT);
-    }
-
-
-    private boolean upgradeNeeded() {
-        if (!AnkiDroidApp.isSdCardMounted()) {
-            showSdCardNotMountedDialog();
-            return false;
-        }
-        File dir = new File(AnkiDroidApp.getCurrentAnkiDroidDirectory());
-        if (!dir.isDirectory()) {
-            dir.mkdirs();
-        }
-        if ((new File(AnkiDroidApp.getCollectionPath())).exists()) {
-            // collection file exists
-            return false;
-        }
-        return dir.listFiles(new OldAnkiDeckFilter()).length > 0;
-    }
-
-
     private SharedPreferences restorePreferences() {
         SharedPreferences preferences = AnkiDroidApp.getSharedPrefs(getBaseContext());
         mPrefDeckPath = AnkiDroidApp.getCurrentAnkiDroidDirectory();
@@ -975,12 +935,6 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
                     startActivityForResultWithoutAnimation(infoIntent, SHOW_INFO_NEW_VERSION);
                 }
             }
-        } else if (skip < 3 && upgradeNeeded()) {
-            // Note that the "upgrade needed" refers to upgrading Anki 1.x decks, not to newer
-            // versions of AnkiDroid.
-            AnkiDroidApp.getSharedPrefs(AnkiDroidApp.getInstance().getBaseContext()).edit()
-                    .putInt("lastUpgradeVersion", AnkiDroidApp.getPkgVersionCode()).commit();
-            showUpgradeScreen(skip != 0, Info.UPGRADE_SCREEN_BASIC1);
         } else if (skip < 4 && hasErrorFiles()) {
             // Need to submit error reports
             Intent i = new Intent(this, Feedback.class);
@@ -1332,8 +1286,6 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
         String currentMessage;
         long countUp;
         long countDown;
-        boolean colIsEmpty;
-
 
         @Override
         public void onDisconnected() {
@@ -1348,19 +1300,10 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
             if (mProgressDialog == null || !mProgressDialog.isShowing()) {
                 mProgressDialog = StyledProgressDialog
                         .show(DeckPicker.this, getResources().getString(R.string.sync_title),
-                                getResources().getString(R.string.sync_prepare_syncing) + "\n"
+                                getResources().getString(R.string.sync_title) + "\n"
                                         + getResources().getString(R.string.sync_up_down_size, countUp, countDown),
                                 true, false);
             }
-            // Collection is closed at end of each sync to roll back any sync failures. 
-            // We may need to reload synchronously here, for example if there was a sync conflict
-            Collection col;
-            if (!colOpen()) {
-                col = AnkiDroidApp.openCollection(AnkiDroidApp.getCollectionPath());
-            } else {
-                col = getCol();
-            }
-            colIsEmpty = col.isEmpty();
         }
 
 
@@ -1402,7 +1345,7 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
         public void onPostExecute(Payload data) {
             String dialogMessage = "";
             String syncMessage = "";
-            Log.i(AnkiDroidApp.TAG, "onPostExecute");
+            Log.i(AnkiDroidApp.TAG, "Sync Listener onPostExecute");
             Resources res = getResources();
             if (mProgressDialog != null) {
                 mProgressDialog.dismiss();
@@ -1444,7 +1387,7 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
                         if (data.data != null && data.data.length >= 1 && data.data[0] instanceof Integer) {
                             mSyncMediaUsn = (Integer) data.data[0];
                         }
-                        if (colIsEmpty) {
+                        if (getCol().isEmpty()) {
                             // don't prompt user to resolve sync conflict if local collection empty
                             sync("download", mSyncMediaUsn);
                             // TODO: Also do reverse check to see if AnkiWeb collection is empty if Anki Desktop
@@ -1918,7 +1861,7 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
 
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                String newName = mDialogEditText.getText().toString().replaceAll("['\"]", "");
+                String newName = mDialogEditText.getText().toString().replaceAll("\"", "");
                 Collection col = getCol();
                 if (col != null) {
                     if (col.getDecks().rename(col.getDecks().get(mContextMenuDid), newName)) {
